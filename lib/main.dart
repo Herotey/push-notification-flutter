@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:push_notification_firebase/firebase.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel', // id
@@ -73,35 +74,35 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-
+    tz.initializeTimeZones();
     FirebaseMessaging.instance.getInitialMessage().then((message) {
       print("app is treminated");
       if (message != null) {
         print("New Notification");
       }
     });
-
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      RemoteNotification? notification = message.notification;
-      AndroidNotification? android = message.notification?.android;
-      if (notification != null && android != null) {
-        flutterLocalNotificationsPlugin.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                channel.id,
-                channel.name,
-                color: Colors.blue,
-                playSound: true,
-                icon: '@mipmap/ic_lancher',
-              ),
-            ));
-        print('with out app');
-        NotificationApi.createNotification(message);
-      }
-    });
+    FirebaseMessaging.onMessage.listen(
+      (RemoteMessage message) {
+        RemoteNotification? notification = message.notification;
+        AndroidNotification? android = message.notification?.android;
+        if (notification != null && android != null) {
+          flutterLocalNotificationsPlugin.show(
+              notification.hashCode,
+              notification.title,
+              notification.body,
+              NotificationDetails(
+                android: AndroidNotificationDetails(
+                  channel.id,
+                  channel.name,
+                  color: Colors.blue,
+                  playSound: true,
+                  icon: '@mipmap/ic_lancher',
+                ),
+              ));
+        }
+        // this is notification for push when isn't run or out app
+      },
+    );
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('A new messageopen app event was published');
@@ -121,9 +122,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               );
             });
-        print('in app ');
-        // createNotification(message);
       }
+      NotificationApi.createNotification(message);
     });
   }
 
@@ -131,6 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _counter++;
     });
+    // it is title and body notification push in app
     flutterLocalNotificationsPlugin.show(
       0,
       "Notification $_counter",
@@ -161,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: showNotification,
+        onPressed: showNotification, // button for selected push notification
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
