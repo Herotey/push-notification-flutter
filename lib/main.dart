@@ -2,8 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:push_notification_firebase/firebase.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:push_notification_firebase/terminate_noti.dart';
+//import 'package:push_notification_firebase/page/details_page.dart';
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel', // id
@@ -22,7 +22,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future<void> main() async {
-  NotificationApi.initialize();
   // firebase App initialize
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -74,36 +73,37 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    tz.initializeTimeZones();
-    FirebaseMessaging.instance.getInitialMessage().then((message) {
-      print("app is treminated");
-      if (message != null) {
-        print("New Notification");
-      }
+    //tz.initializeTimeZones();
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
+      NotificationApi.createNotification(message!);
     });
-    FirebaseMessaging.onMessage.listen(
-      (RemoteMessage message) {
-        RemoteNotification? notification = message.notification;
-        AndroidNotification? android = message.notification?.android;
-        if (notification != null && android != null) {
-          flutterLocalNotificationsPlugin.show(
-              notification.hashCode,
-              notification.title,
-              notification.body,
-              NotificationDetails(
-                android: AndroidNotificationDetails(
-                  channel.id,
-                  channel.name,
-                  color: Colors.blue,
-                  playSound: true,
-                  icon: '@mipmap/ic_lancher',
-                ),
-              ));
-        }
-        // this is notification for push when isn't run or out app
-      },
-    );
-
+    // make notification on message
+    // FirebaseMessaging.onMessage.listen(
+    //   (RemoteMessage message) {
+    //     RemoteNotification? notification = message.notification;
+    //     AndroidNotification? android = message.notification?.android;
+    //     if (notification != null && android != null) {
+    //       flutterLocalNotificationsPlugin.show(
+    //           notification.hashCode,
+    //           notification.title,
+    //           notification.body,
+    //           NotificationDetails(
+    //             android: AndroidNotificationDetails(
+    //               channel.id,
+    //               channel.name,
+    //               color: Colors.blue,
+    //               playSound: true,
+    //               icon: '@mipmap/ic_lancher',
+    //             ),
+    //           ));
+    //     }
+    //     // this is notification for push when isn't run or out app
+    //     NotificationApi.createNotification(message);
+    //   },
+    // );
+// this function for push notificatio on app open
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('A new messageopen app event was published');
       RemoteNotification? notification = message.notification;
@@ -123,18 +123,17 @@ class _MyHomePageState extends State<MyHomePage> {
               );
             });
       }
-      NotificationApi.createNotification(message);
     });
   }
 
-  void showNotification() {
+  void showNoti() {
     setState(() {
       _counter++;
     });
     // it is title and body notification push in app
     flutterLocalNotificationsPlugin.show(
       0,
-      "Notification $_counter",
+      "Message Notification $_counter",
       "This is an Flutter Push Notification",
       NotificationDetails(
           android: AndroidNotificationDetails(channel.id, channel.name,
@@ -145,26 +144,63 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void showNotification() {
+    setState(() {
+      _counter++;
+      flutterLocalNotificationsPlugin.show(
+      0,
+      "Notification $_counter",
+      "This is an Flutter Push Notification",
+      NotificationDetails(
+          android: AndroidNotificationDetails(channel.id, channel.name,
+              importance: Importance.high,
+              color: Colors.blue,
+              playSound: true,
+              icon: '@mipmap/ic_launcher')),
+    );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          IconButton(
+              onPressed: () => showNoti(),
+              icon: const Icon(
+                Icons.notification_add,
+                color: Colors.white,
+              ))
+        ],
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'This is Flutter Push Notification Example',
+            const Text(
+              // title in home page
+              'This is example for Push Notification in flutter app',
             ),
+            Container(
+              height: 200,
+              width: 200,
+              decoration: BoxDecoration(
+                image: const DecorationImage(
+                    // image in home page
+                    image: AssetImage('assets/image/person.png')),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            )
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: showNotification, // button for selected push notification
         tooltip: 'Increment',
-        child: Icon(Icons.add),
+        child: const Icon(Icons
+            .add), // for push notification on app open and counter notification
       ),
     );
   }
