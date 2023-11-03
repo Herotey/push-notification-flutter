@@ -1,6 +1,5 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -23,8 +22,8 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
 //apply from: "$flutterRoot/packages/flutter_tools/gradle/app_plugin_loader.gradle"
 
 android {

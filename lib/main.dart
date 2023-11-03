@@ -1,13 +1,12 @@
+// ignore_for_file: avoid_print
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:push_notification_firebase/terminate_noti.dart';
-//import 'package:push_notification_firebase/page/details_page.dart';
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel', // id
-    'High Importance Notifications', // title// description
+    'High Importance Notifications', // title
     importance: Importance.high,
     playSound: true);
 
@@ -19,27 +18,61 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('A Background message just showed up :  ${message.messageId}');
+  print(message.data);
+  showNotification(message);
 }
 
 Future<void> main() async {
   // firebase App initialize
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  // final fc = await FirebaseMessaging.instance.getToken();
+  // print(fc);
+
+  //push notification when out app or on OS screen but app open in background
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-// Firebase local notification plugin
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
-//Firebase messaging
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
+  // on message when app open and in the app
+  FirebaseMessaging.onMessage.listen(
+    (RemoteMessage message) async {
+      showNotification(message);
+    },
   );
+
+  ///Firebase messaging when app kill or app not running
+  FirebaseMessaging.instance.getInitialMessage().then(
+    (RemoteMessage? message) {
+      showNotification(message!);
+    },
+  );
+
   runApp(MyApp());
+}
+
+void showNotification(RemoteMessage message) {
+  counter++;
+  //message.data;
+  print('4441111144');
+  print(message.data);
+  flutterLocalNotificationsPlugin.show(
+    counter,
+    "${message.data['title']}",
+    "${message.data['body']}",
+    NotificationDetails(
+        android: AndroidNotificationDetails(channel.id, channel.name,
+            importance: Importance.high,
+            color: Colors.blue,
+            playSound: true,
+            subText: message.data['subtext'],
+            number: 1,
+            //channelDescription: message.data['descr'],
+            icon: '@mipmap/ic_launcher')),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -67,108 +100,29 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+int _counter = 0;
+int counter = 0;
 
+class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    //tz.initializeTimeZones();
-    FirebaseMessaging.instance
-        .getInitialMessage()
-        .then((RemoteMessage? message) {
-      NotificationApi.createNotification(message!);
-    });
-    // make notification on message
-    // FirebaseMessaging.onMessage.listen(
-    //   (RemoteMessage message) {
-    //     RemoteNotification? notification = message.notification;
-    //     AndroidNotification? android = message.notification?.android;
-    //     if (notification != null && android != null) {
-    //       flutterLocalNotificationsPlugin.show(
-    //           notification.hashCode,
-    //           notification.title,
-    //           notification.body,
-    //           NotificationDetails(
-    //             android: AndroidNotificationDetails(
-    //               channel.id,
-    //               channel.name,
-    //               color: Colors.blue,
-    //               playSound: true,
-    //               icon: '@mipmap/ic_lancher',
-    //             ),
-    //           ));
-    //     }
-    //     // this is notification for push when isn't run or out app
-    //     NotificationApi.createNotification(message);
-    //   },
-    // );
-// this function for push notificatio on app open
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('A new messageopen app event was published');
-      RemoteNotification? notification = message.notification;
-      AndroidNotification? android = message.notification?.android;
-      if (notification != null && android != null) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return AlertDialog(
-                title: Text(notification.title.toString()),
-                content: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [Text(notification.body.toString())],
-                  ),
-                ),
-              );
-            });
-      }
-    });
-  }
-
-  void showNoti() {
-    setState(() {
-      _counter++;
-    });
-    // it is title and body notification push in app
-    flutterLocalNotificationsPlugin.show(
-      0,
-      "Message Notification $_counter",
-      "This is an Flutter Push Notification",
-      NotificationDetails(
-          android: AndroidNotificationDetails(channel.id, channel.name,
-              importance: Importance.high,
-              color: Colors.blue,
-              playSound: true,
-              icon: '@mipmap/ic_launcher')),
-    );
-  }
-
-  void showNotification() {
-    setState(() {
-      _counter++;
-      flutterLocalNotificationsPlugin.show(
-      0,
-      "Notification $_counter",
-      "This is an Flutter Push Notification",
-      NotificationDetails(
-          android: AndroidNotificationDetails(channel.id, channel.name,
-              importance: Importance.high,
-              color: Colors.blue,
-              playSound: true,
-              icon: '@mipmap/ic_launcher')),
-    );
-    });
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings("@mipmap/ic_launcher");
+    var intitializeSettings =
+        const InitializationSettings(android: initializationSettingsAndroid);
+    flutterLocalNotificationsPlugin.initialize(intitializeSettings);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text("Notification With Firebase"),
         actions: [
           IconButton(
-              onPressed: () => showNoti(),
+              onPressed:
+                  () {}, // showDialog(context: context, builder: builder)
               icon: const Icon(
                 Icons.notification_add,
                 color: Colors.white,
@@ -180,8 +134,19 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              // title in home page
-              'This is example for Push Notification in flutter app',
+              'This is example Push Notification',
+              style: TextStyle(
+                  fontSize: 20, color: Colors.black), // title in home page
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            const Text(
+              'this notification is push by firebase message',
+              style: TextStyle(fontSize: 15, color: Colors.black38),
+            ),
+            const SizedBox(
+              height: 20,
             ),
             Container(
               height: 200,
@@ -197,7 +162,8 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: showNotification, // button for selected push notification
+        onPressed: () {},
+        // showNotification(), // button for selected push notification
         tooltip: 'Increment',
         child: const Icon(Icons
             .add), // for push notification on app open and counter notification
