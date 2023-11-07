@@ -26,3 +26,4 @@ admin.messaging().send(message)
     .catch((error) => {
         console.log('Error send message :', error);
     })
+

@@ -19,7 +19,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('A Background message just showed up :  ${message.messageId}');
   print(message.data);
-  showNotification(message);
+  RemoteNotification? notification = message.notification;
+  AndroidNotification? android = message.notification?.android;
+  if (notification == null && android == null) {
+    showNotificatios(message);
+  }
 }
 
 Future<void> main() async {
@@ -28,26 +32,32 @@ Future<void> main() async {
   await Firebase.initializeApp();
   // final fc = await FirebaseMessaging.instance.getToken();
   // print(fc);
-
-  //push notification when out app or on OS screen but app open in background
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
+  //push notification when out app or on OS screen but app open in background
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   // on message when app open and in the app
   FirebaseMessaging.onMessage.listen(
-    (RemoteMessage message) async {
-      showNotification(message);
+    (RemoteMessage messages) async {
+      RemoteNotification? notification = messages.notification;
+      AndroidNotification? android = messages.notification?.android;
+      if (notification == null && android == null) {
+        showNotificatio1(messages);
+        print(messages.messageId);
+      }
     },
   );
 
   ///Firebase messaging when app kill or app not running
   FirebaseMessaging.instance.getInitialMessage().then(
     (RemoteMessage? message) {
-      showNotification(message!);
+ 
+        showNotification(message!);
+        print(message.messageId);
     },
   );
 
@@ -55,23 +65,65 @@ Future<void> main() async {
 }
 
 void showNotification(RemoteMessage message) {
-  counter++;
-  //message.data;
-  print('4441111144');
+  print(id_3);
   print(message.data);
+  message.messageId;
   flutterLocalNotificationsPlugin.show(
-    counter,
+    id_3++,
     "${message.data['title']}",
     "${message.data['body']}",
     NotificationDetails(
-        android: AndroidNotificationDetails(channel.id, channel.name,
-            importance: Importance.high,
-            color: Colors.blue,
-            playSound: true,
-            subText: message.data['subtext'],
-            number: 1,
-            //channelDescription: message.data['descr'],
-            icon: '@mipmap/ic_launcher')),
+        android: AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      importance: Importance.high,
+      color: Colors.blue,
+      playSound: true,
+      subText: message.data['subtext'],
+      icon: '@mipmap/ic_launcher',
+    )),
+  );
+}
+
+void showNotificatio1(RemoteMessage message) {
+  //message.data;
+  //print('4441111144');
+  print(message.data);
+  print(id_1);
+  flutterLocalNotificationsPlugin.show(
+    id_1++,
+    "${message.data['title']}",
+    "${message.data['body']}",
+    NotificationDetails(
+        android: AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      importance: Importance.high,
+      color: Colors.blue,
+      playSound: true,
+      subText: message.data['subtext'],
+      icon: '@mipmap/ic_launcher',
+    )),
+  );
+}
+
+void showNotificatios(RemoteMessage message) {
+  print(message.data);
+  print(id_2);
+  flutterLocalNotificationsPlugin.show(
+    id_2++,
+    "${message.data['title']}",
+    "${message.data['body']}",
+    NotificationDetails(
+        android: AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      importance: Importance.high,
+      color: Colors.blue,
+      playSound: true,
+      subText: message.data['subtext'],
+      icon: '@mipmap/ic_launcher',
+    )),
   );
 }
 
@@ -100,8 +152,9 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-int _counter = 0;
-int counter = 0;
+int id_1 = 0;// id on message in app
+int id_2 = 10;// id on message background app
+int id_3 = 20;// id on message terminate app
 
 class _MyHomePageState extends State<MyHomePage> {
   @override
